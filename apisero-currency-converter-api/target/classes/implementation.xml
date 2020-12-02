@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="eca5db15-0b45-4ec3-9fe5-ffdf67f43168" basePath="${exchange.basepath}">
+		<http:request-connection host="${exchange.host}" port="${exchange.port}" protocol="HTTPS"/>
+	</http:request-config>
+	<flow name="get-exchange-flow" doc:id="3fbcb614-d59c-45a0-9d7d-4a3bf3a1f576" >
+		<ee:transform doc:name="Transform Message" doc:id="585d1b19-47b6-483e-aafe-860d6eddedbc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json 
+---
+true]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="fromCurrency" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.fromCurrency]]></ee:set-variable>
+				<ee:set-variable variableName="toCurrency" ><![CDATA[%dw 2.0
+output application/json
+---
+attributes.queryParams.toCurrency]]></ee:set-variable>
+				<ee:set-variable variableName="amount" ><![CDATA[%dw 2.0
+output application/java
+---
+attributes.queryParams.ammount]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="Request to open exchange" doc:id="5f6ccd9b-af98-494e-879c-7c321826b849" config-ref="HTTP_Request_configuration" path="/">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"app_id" : p('secure::exchange.app_id')
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="convert to required format" doc:id="1f8afdbb-5d6b-4f32-8632-0a3c1f269333" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var ToCurrency = vars.toCurrency as String
+var convertRate = payload.rates[ToCurrency] as Number
+var amount = vars.amount as Number
+---
+
+exchange:{
+"ConvertedAmmount": amount*convertRate,
+"conversionRate": convertRate
+}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

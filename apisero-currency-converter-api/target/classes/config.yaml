@@ -1,0 +1,8 @@
+http:
+  port: "8081"
+exchange:
+  host: "openexchangerates.org"
+  port: "443"
+  basepath: "/api/latest.json"
+  protocol: "HTTP"
+  app_id: "![IhQPQw6F5kIwwLYRAEpUHF4c+Vr7fxW11wjNWvgD4IzUDWkZouYBWA==]"
